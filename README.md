@@ -9,10 +9,12 @@ Some external libraries are included in this repository for use of all sensors
 * [MMA7660](https://github.com/Seeed-Studio/Accelerometer_MMA7660) (Accelerometer)
 * [TPH2](http://support.sodaq.com/sodaq-one/tph-v2/) Adafruit_Sensor and Adafruit_BME280
 
-This library has been developed for the folowing hardware:
+## Hardware
 
-Sodaq Mbili (other arduino devices should be compatible)
-Microchip LoRa modem
+This library has been developed for:
+
+- Sodaq Mbili
+- Microchip LoRa modem
 
 ## Installation
 
