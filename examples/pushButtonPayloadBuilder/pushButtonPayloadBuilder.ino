@@ -29,7 +29,7 @@ int DigitalSensor = 20;                                        // digital sensor
 
 static uint8_t sendBuffer[51];
 
-ATT_PB ATT_Payload(51); // buffer is set to the same size as the sendBuffer[]
+ATT_PB payload(51); // buffer is set to the same size as the sendBuffer[]
 
 void setup() 
 {  
@@ -52,11 +52,11 @@ void setup()
 
 void SendValue(bool val)
 {
-  ATT_Payload.reset();
-  ATT_Payload.addBoolean(val);
-  ATT_Payload.copy(sendBuffer);
+  payload.reset();
+  payload.addBoolean(val);
+  payload.copy(sendBuffer);
   
-  Device.AddToQueue(&sendBuffer, ATT_Payload.getSize(), false);  // without ACK!
+  Device.AddToQueue(&sendBuffer, payload.getSize(), false);  // without ACK!
   Device.ProcessQueue();
   
   while(Device.ProcessQueue() > 0) {
@@ -72,8 +72,8 @@ bool prevButtonState = false;
 
 void loop() 
 {
-  bool sensorRead = digitalRead(DigitalSensor);       // read status Digital Sensor
-  if (sensorRead == 1 && prevButtonState == false)      // verify if value has changed
+  bool sensorRead = digitalRead(DigitalSensor);     // read status Digital Sensor
+  if (sensorRead == 1 && prevButtonState == false)  // verify if value has changed
   {
     prevButtonState = true;
     debugSerial.println("Button pressed");

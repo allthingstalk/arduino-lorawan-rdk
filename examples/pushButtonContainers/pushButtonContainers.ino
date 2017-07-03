@@ -64,8 +64,8 @@ bool prevButtonState = false;
 
 void loop() 
 {
-  bool sensorRead = digitalRead(DigitalSensor);       // read status Digital Sensor
-  if (sensorRead == 1 && prevButtonState == false)      // verify if value has changed
+  bool sensorRead = digitalRead(DigitalSensor);     // read status Digital Sensor
+  if (sensorRead == 1 && prevButtonState == false)  // verify if value has changed
   {
     prevButtonState = true;
     debugSerial.println("Button pressed");
