@@ -18,7 +18,7 @@ This library has been developed for:
 
 ## Installation
 
-Download the source code and opy the content of the zip file to your arduino libraries folder (usually found at <arduinosketchfolder>/libraries).
+Download the source code and copy the content of the zip file to your arduino libraries folder (usually found at <arduinosketchfolder>/libraries).
 
 ## Example sketches
 
