@@ -56,7 +56,6 @@
 #include <MicrochipLoRaModem.h>
 #include <Container.h>
 
-
 #define SERIAL_BAUD 57600
 
 #define debugSerial Serial
@@ -68,21 +67,20 @@
 
 #define SEND_EVERY 300000
 
-MicrochipLoRaModem Modem(&loraSerial, &debugSerial);
-ATTDevice Device(&Modem, &debugSerial, false, 7000);  // minimum time between 2 messages set at 7000 milliseconds
+MicrochipLoRaModem modem(&loraSerial, &debugSerial);
+ATTDevice device(&modem, &debugSerial, false, 7000);  // minimum time between 2 messages set at 7000 milliseconds
 
-Container container(Device);
+Container container(device);
 
 AirQuality2 airqualitysensor;
 Adafruit_BME280 tph; // I2C
-
 
 float soundValue;
 float lightValue;
 float temp;
 float hum;
 float pres;
-short airValue;
+int16_t airValue;
 
 void setup() 
 {
@@ -90,50 +88,55 @@ void setup()
   digitalWrite(GROVEPWR, HIGH);
 
   debugSerial.begin(SERIAL_BAUD);
-  while((!debugSerial) && (millis()) < 10000){}  // wait until debugSerial. bus is available
+  debugSerial.begin(SERIAL_BAUD);
+  while((!debugSerial) && (millis()) < 10000){}  // wait until the serial bus is available
 
-  loraSerial.begin(Modem.getDefaultBaudRate());  // init the baud rate of the loraSerial connection so that it's ok for the modem
-  while((!loraSerial) && (millis()) < 10000){}   // wait until loraSerial bus is available
+  loraSerial.begin(modem.getDefaultBaudRate());  // set baud rate of the serial connection to match the modem
+  while((!loraSerial) && (millis()) < 10000){}   // wait until the serial bus is available
 
-  while(!Device.InitABP(DEV_ADDR, APPSKEY, NWKSKEY))
-  debugSerial.println("retrying...");  // initialize connection with the AllThingsTalk Developer Cloud
+  while(!device.initABP(DEV_ADDR, APPSKEY, NWKSKEY))
+  debugSerial.println("retrying...");
   debugSerial.println("Ready to send data");
   
+  debugSerial.println();
   debugSerial.println("-- Environmental Sensing LoRa experiment --");
   debugSerial.println();
 
-  InitSensors();
+  initSensors();
 }
-
 
 void loop() 
 {
-  ReadSensors();
-  DisplaySensorValues();
-  SendSensorValues();
+  readSensors();
+  displaySensorValues();
+  sendSensorValues();
+  
   debugSerial.print("Delay for: ");
   debugSerial.println(SEND_EVERY);
   debugSerial.println();
   delay(SEND_EVERY);
 }
 
-void InitSensors()
+void initSensors()
 {
   debugSerial.println("Initializing sensors, this can take a few seconds...");
-  pinMode(SoundSensorPin,INPUT);
-  pinMode(LightSensorPin,INPUT);
+  
+  pinMode(SoundSensorPin, INPUT);
+  pinMode(LightSensorPin, INPUT);
+  
   tph.begin();
   airqualitysensor.init(AirQualityPin);
   debugSerial.println("Done");
 }
 
-void ReadSensors()
+void readSensors()
 {
     debugSerial.println("Start reading sensors");
     debugSerial.println("---------------------");
+    
     soundValue = analogRead(SoundSensorPin);
     lightValue = analogRead(LightSensorPin);
-    lightValue = lightValue * 3.3 / 1023;  // convert to lux, this is based on the voltage that the sensor receives
+    lightValue = lightValue * 3.3 / 1023;  // convert to lux based on the voltage that the sensor receives
     lightValue = pow(10, lightValue);
     
     temp = tph.readTemperature();
@@ -143,67 +146,50 @@ void ReadSensors()
     airValue = airqualitysensor.getRawData();
 }
 
-void SendSensorValues()
+// wait 10 seconds before sending the next datapoint
+void process()
 {
-  debugSerial.println("Start uploading data to the ATT cloud Platform");
-  debugSerial.println("----------------------------------------------");
-    
-  debugSerial.println("Sending sound value... ");
-  container.AddToQueue(soundValue, LOUDNESS_SENSOR, false);
-  Device.ProcessQueue();
-  while(Device.ProcessQueue() > 0) {
+  device.processQueue();
+  while(device.processQueue() > 0)
+  {
     debugSerial.print("QueueCount: ");
-    debugSerial.println(Device.QueueCount());
-    delay(10000);
-  }
-
-  debugSerial.println("Sending light value... ");
-  container.AddToQueue(lightValue, LIGHT_SENSOR, false);
-  Device.ProcessQueue();
-  while(Device.ProcessQueue() > 0) {
-    debugSerial.print("QueueCount: ");
-    debugSerial.println(Device.QueueCount());
-    delay(10000);
-  }
-
-  debugSerial.println("Sending temperature value... ");
-  container.AddToQueue(temp, TEMPERATURE_SENSOR, false);
-  Device.ProcessQueue();
-  while(Device.ProcessQueue() > 0) {
-    debugSerial.print("QueueCount: ");
-    debugSerial.println(Device.QueueCount());
-    delay(10000);
-  }
-
-  debugSerial.println("Sending humidity value... ");  
-  container.AddToQueue(hum, HUMIDITY_SENSOR, false);
-  Device.ProcessQueue();
-  while(Device.ProcessQueue() > 0) {
-    debugSerial.print("QueueCount: ");
-    debugSerial.println(Device.QueueCount());
-    delay(10000);
-  }
-
-  debugSerial.println("Sending pressure value... ");  
-  container.AddToQueue(pres, PRESSURE_SENSOR, false);
-  Device.ProcessQueue();
-  while(Device.ProcessQueue() > 0) {
-    debugSerial.print("QueueCount: ");
-    debugSerial.println(Device.QueueCount());
-    delay(10000);
-  }
-
-  debugSerial.println("Sending air quality value... ");  
-  container.AddToQueue(airValue, AIR_QUALITY_SENSOR, false);
-  Device.ProcessQueue();
-  while(Device.ProcessQueue() > 0) {
-    debugSerial.print("QueueCount: ");
-    debugSerial.println(Device.QueueCount());
+    debugSerial.println(device.queueCount());
     delay(10000);
   }
 }
 
-void DisplaySensorValues()
+void sendSensorValues()
+{
+  debugSerial.println("Start sending data to the ATT cloud platform");
+  debugSerial.println("--------------------------------------------");
+    
+  debugSerial.println("Sending sound value... ");
+  container.addToQueue(soundValue, LOUDNESS_SENSOR, false);
+  process();
+
+  debugSerial.println("Sending light value... ");
+  container.addToQueue(lightValue, LIGHT_SENSOR, false);
+  process();
+
+  debugSerial.println("Sending temperature value... ");
+  container.addToQueue(temp, TEMPERATURE_SENSOR, false);
+  process();
+
+  debugSerial.println("Sending humidity value... ");  
+  container.addToQueue(hum, HUMIDITY_SENSOR, false);
+  process();
+
+  debugSerial.println("Sending pressure value... ");  
+  container.addToQueue(pres, PRESSURE_SENSOR, false);
+  process();
+
+  debugSerial.println("Sending air quality value... ");  
+  container.addToQueue(airValue, AIR_QUALITY_SENSOR, false);
+  process();
+
+}
+
+void displaySensorValues()
 {
   debugSerial.print("Sound level: ");
   debugSerial.print(soundValue);

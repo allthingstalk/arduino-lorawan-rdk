@@ -59,16 +59,18 @@
 
 int pushButton = 20;          
 int doorSensor = 4;
-MicrochipLoRaModem Modem(&loraSerial, &debugSerial);
-ATTDevice Device(&Modem, &debugSerial, false, 7000);  // Min Time between 2 consecutive messages set @ 7 seconds
 
-Container container(Device);
+MicrochipLoRaModem modem(&loraSerial, &debugSerial);
+ATTDevice device(&modem, &debugSerial, false, 7000);  // minimum time between 2 consecutive messages set to 7000 milliseconds
 
-#define SEND_MAX_EVERY 30000                                // the mimimum time between 2 consecutive updates of visit counts that are sent to the cloud (can be longer, if the value hasn't changed)
+Container container(device);
+
+#define SEND_MAX_EVERY 30000 // the (mimimum) time between 2 consecutive updates of visit counts
 
 bool prevButtonState;
 bool prevDoorSensor;
-short visitCount = 0;  // keeps track of the nr of visitors
+
+short visitCount = 0;  // keep track of the nr of visitors
 short prevVisitCountSent = 0;
 unsigned long lastSentAt = 0;  // the time when the last visitcount was sent to the cloud
 
@@ -78,31 +80,38 @@ void setup()
   pinMode(doorSensor, INPUT);
 
   debugSerial.begin(SERIAL_BAUD);
-  while((!debugSerial) && (millis()) < 10000){}  // wait until serial bus is available
+  while((!debugSerial) && (millis()) < 10000){}  // wait until the serial bus is available
   
-  loraSerial.begin(Modem.getDefaultBaudRate());  // init the baud rate of the serial connection so that it's ok for the modem
-  while((!loraSerial) && (millis()) < 10000){}   // wait until serial bus is available
+  loraSerial.begin(modem.getDefaultBaudRate());  // set baud rate of the serial connection to match the modem
+  while((!loraSerial) && (millis()) < 10000){}   // wait until the serial bus is available
 
-  while(!Device.InitABP(DEV_ADDR, APPSKEY, NWKSKEY))
-  debugSerial.println("retrying...");            // initialize connection with the AllThingsTalk Developer Cloud
+  while(!device.initABP(DEV_ADDR, APPSKEY, NWKSKEY))
+  debugSerial.println("retrying...");
   debugSerial.println("Ready to send data");
 
+  debugSerial.println();
   debugSerial.println("-- Count visits LoRa experiment --");
-  debugSerial.print("Sending data every ");debugSerial.print(SEND_MAX_EVERY);debugSerial.println(" milliseconds, if changed");
+  debugSerial.print("Sending data every ");
+  debugSerial.print(SEND_MAX_EVERY);
+  debugSerial.println(" milliseconds, if changed");
   debugSerial.println();
   
-  prevButtonState = digitalRead(pushButton);  // set the initial state
-  prevDoorSensor = digitalRead(doorSensor);   // set the initial state
+  prevButtonState = digitalRead(pushButton);  // read the initial state
+  prevDoorSensor = digitalRead(doorSensor);   // read the initial state
 }
 
-void sendVisitCount(short val)
+void sendVisitCount(int16_t val)
 {
-  container.AddToQueue(val, INTEGER_SENSOR, false);  // without ACK
-  Device.ProcessQueue();
-  while(Device.ProcessQueue() > 0) {
-    debugSerial.print("QueueCount: "); debugSerial.println(Device.QueueCount());
+  container.addToQueue(val, INTEGER_SENSOR, false);  // without ACK
+  device.processQueue();
+  
+  while(device.processQueue() > 0)
+  {
+    debugSerial.print("QueueCount: ");
+    debugSerial.println(device.queueCount());
     delay(10000);
   }
+
   lastSentAt = millis();
 }
 
@@ -111,7 +120,9 @@ void loop()
   processButton();
   processDoorSensor();
   delay(100);
-  if(prevVisitCountSent != visitCount && lastSentAt + SEND_MAX_EVERY <= millis())  // only send a message when something has changed and SEND_MAX_EVERY has been exceeded
+  
+  // only send a message when something has changed and SEND_MAX_EVERY has been exceeded
+  if(prevVisitCountSent != visitCount && lastSentAt + SEND_MAX_EVERY <= millis())
     sendVisitCount(visitCount);
 }
 
@@ -122,7 +133,7 @@ void processDoorSensor()
   if(prevDoorSensor != sensorRead)
   {
     prevDoorSensor = sensorRead;
-    if(sensorRead == true)  // door was closed, so increment the counter 
+    if(sensorRead == true)
     {
       debugSerial.println("Door closed");
       visitCount++;  // the door was opened and closed again, so increment the counter
@@ -134,6 +145,7 @@ void processDoorSensor()
   }
 }
 
+// check the state of the button
 void processButton()
 {
   bool sensorRead = digitalRead(pushButton);  // check the state of the button

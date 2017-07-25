@@ -57,12 +57,12 @@
 #define debugSerial Serial
 #define loraSerial Serial1
 
-#define MOVEMENTTRESHOLD 12  // amount of movement that can be detected before being considered as really moving (jitter on the accelerometer, vibrations)
+#define MOVEMENTTRESHOLD 12  // threshold for accelerometer movement
 
-MicrochipLoRaModem Modem(&loraSerial, &debugSerial);
-ATTDevice Device(&Modem, &debugSerial, false, 7000);  // minimum time between 2 messages set at 7000 milliseconds
+MicrochipLoRaModem modem(&loraSerial, &debugSerial);
+ATTDevice device(&modem, &debugSerial, false, 7000);  // minimum time between 2 messages set at 7000 milliseconds
 
-Container container(Device);
+Container container(device);
 
 MMA7660 accelemeter;
 
@@ -77,54 +77,63 @@ float longitude;
 float altitude;
 float timestamp;
 
-int8_t prevX,prevY,prevZ;  // keeps track of the accelerometer data that was read last previously, so we can detect a difference in position
+int8_t prevX,prevY,prevZ;  // keeps track of the previous accelerometer data
 
-// accelerometer data is translated to 'moving vs not moving' on the device
+// accelerometer data is translated to 'moving' vs 'not moving' on the device
 // this boolean value is sent to the cloud using a generic 'Binary Sensor' container
 bool wasMoving = false;     
 
-void sendVal(boolean val)
-{
-  container.AddToQueue(val, BINARY_SENSOR, false);
-  Device.ProcessQueue();
-  while(Device.ProcessQueue() > 0) {
-    debugSerial.print("QueueCount: "); debugSerial.println(Device.QueueCount());
-    delay(10000);
-  }
-}
-
 void setup() 
 {
-  accelemeter.init();  // accelerometer is always running so we can check when the object is moving around or not
+  // accelerometer is always running so we can check when the object is moving
+  accelemeter.init();
   SoftSerial.begin(9600); 
 
   debugSerial.begin(Serial_BAUD);
-  while((!debugSerial) && (millis()) < 10000){}  // wait until debugSerial. bus is available
+  while((!debugSerial) && (millis()) < 10000){}  // wait until the serial bus is available
   
-  loraSerial.begin(Modem.getDefaultBaudRate());  // init the baud rate of the debugSerial. connection so that it's ok for the modem
-  while((!loraSerial) && (millis()) < 10000){}   // wait until debugSerial. bus is available
+  loraSerial.begin(modem.getDefaultBaudRate());  // set baud rate of the serial connection to match the modem
+  while((!loraSerial) && (millis()) < 10000){}   // wait until the serial bus is available
 
-  while(!Device.InitABP(DEV_ADDR, APPSKEY, NWKSKEY))
+  while(!device.initABP(DEV_ADDR, APPSKEY, NWKSKEY))
   debugSerial.println("retrying...");  // initialize connection with the AllThingsTalk Developer Cloud
   debugSerial.println("Ready to send data");
 
+  debugSerial.println();
   debugSerial.println("-- Guard your stuff LoRa experiment --");
   debugSerial.println();
     
   debugSerial.print("Initializing GPS");
-  while(readCoordinates() == false){
+  while(readCoordinates() == false)
+  {
     delay(1000);
     debugSerial.print(".");
   }
   debugSerial.println("Done");
 
-  accelemeter.getXYZ(&prevX, &prevY, &prevZ);  // get the current state of the accelerometer so we can use this info in the loop as something to compare against
+  accelemeter.getXYZ(&prevX, &prevY, &prevZ);  // get initial accelerometer state
 
   debugSerial.println("Sending initial state");
   sendVal(false);
 
   debugSerial.println("Ready to guard your stuff");
   debugSerial.println();
+}
+
+void process()
+{
+  device.processQueue();
+  while(device.processQueue() > 0) {
+    debugSerial.print("QueueCount: ");
+    debugSerial.println(device.queueCount());
+    delay(10000);
+  }
+}
+
+void sendVal(boolean val)
+{
+  container.addToQueue(val, BINARY_SENSOR, false);
+  process();
 }
 
 void loop() 
@@ -137,10 +146,9 @@ void loop()
       debugSerial.println("Movement detected");
       debugSerial.println("-----------------");
 
-      //optional improvement: only turn on the gps when it is used: while the device is moving
       wasMoving = true;
       sendVal(true);
-      SendCoordinates();
+      sendCoordinates();
     }
   }
   else if(wasMoving == true)
@@ -148,14 +156,14 @@ void loop()
     debugSerial.println();
     debugSerial.println("Movement stopped");
     debugSerial.println("----------------");
-    // we don't need to send coordinates when the device has stopped moving
-    // -> they will always be the same, so we can save some power
-    // optional improvement: turn off the gps module
+    
+    // no need to send coordinates when the device has stopped moving
+    // since the coordinates stay the same. This saves some power
     wasMoving = false;
     sendVal(false);
-    SendCoordinates();  // send over last known coordinates
+    sendCoordinates();  // send over last known coordinates
   }
-  delay(500);  // sample the accelerometer quickly -> not so costly
+  delay(500);  // sample the accelerometer quickly
 }
 
 bool isMoving()
@@ -164,10 +172,7 @@ bool isMoving()
   accelemeter.getXYZ(&x, &y, &z);
   bool result = (abs(prevX - x) + abs(prevY - y) + abs(prevZ - z)) > MOVEMENTTRESHOLD;
 
-  // when movment stops, we check 2 times, cause often, the accelerometer reports
-  // for a single tick that movement has stopped, but it hasn't, the distance between
-  // the 2 measurement points was just too close, so remeasure, make certain that
-  // movement has really stopped
+  // do a second measurement to make sure movement really stopped
   if(result == false && wasMoving == true)
   {
     delay(800);
@@ -185,46 +190,49 @@ bool isMoving()
   return result; 
 }
 
-// tries to read the gps coordinates from the text stream that was received from the gps module
-// returns: true when gps coordinates were found in the input, otherwise false
+// try to read the gps coordinates from the text stream that was received from the gps module
+// returns true when gps coordinates were found in the input, otherwise false
 bool readCoordinates()
 {
-  bool foundGPGGA = false;  // sensor can return multiple types of data, need to capture lines that start with $GPGGA
+  // sensor can return multiple types of data
+  // we need to capture lines that start with $GPGGA
+  bool foundGPGGA = false;
   if (SoftSerial.available())                     
   {
-    while(SoftSerial.available())  // reading data into char array
+    while(SoftSerial.available())  // read data into char array
     {
-      buffer[count++]=SoftSerial.read();  // store the received data in a temp buffer for further processing later on
+      buffer[count++]=SoftSerial.read();  // store data in a buffer for further processing
       if(count == 64)
         break;
     }
-    foundGPGGA = count > 60 && ExtractValues();  // if we have less then 60 characters, then we have bogus input, so don't try to parse it or process the values
-    clearBufferArray();                          // call clearBufferArray function to clear the stored data from the array
+    foundGPGGA = count > 60 && extractValues();  // if we have less then 60 characters, we have incomplete input
+    clearBufferArray();
   }
   return foundGPGGA;
 }
 
-//sends the GPS coordinates to the cloud
-void SendCoordinates()
+// send the GPS coordinates to the AllThingsTalk cloud
+void sendCoordinates()
 {
   debugSerial.print("Retrieving GPS coordinates for transmission, please wait");
-  // try to read some coordinates until we have a valid set. Every time we
-  // fail, pause a little to give the GPS some time. There is no point to
-  // continue without reading gps coordinates. The bike was potentially
-  // stolen, so the lcoation needs to be reported before switching back to
-  // none moving.
-  while(readCoordinates() == false){
+  
+  /*
+   * try to read some coordinates until we have a valid set. Every time we
+   * fail, pause a little to give the GPS some time. There is no point to
+   * continue without reading gps coordinates. The bike was potentially
+   * stolen, so the lcoation needs to be reported before switching back to
+   * 'not moving'.
+   */  
+  
+  while(readCoordinates() == false)
+  {
     debugSerial.print(".");
     delay(1000);                 
   }
   debugSerial.println();
          
-  container.AddToQueue(latitude, longitude, altitude, timestamp, GPS, false);  // No ACK
-  Device.ProcessQueue();
-  while(Device.ProcessQueue() > 0) {
-    debugSerial.print("QueueCount: "); debugSerial.println(Device.QueueCount());
-    delay(10000);
-  }
+  container.addToQueue(latitude, longitude, altitude, timestamp, GPS, false);
+  process();
   
   debugSerial.print("lng: ");
   debugSerial.print(longitude, 4);
@@ -236,70 +244,88 @@ void SendCoordinates()
   debugSerial.println(timestamp);
 }
 
-// extracts all the coordinates from the stream that was received from the module
-// and stores the values in the globals defined at the top of the sketch
-bool ExtractValues()
+// extract all the coordinates from the stream
+// store the values in the globals defined at the top of the sketch
+bool extractValues()
 {
   unsigned char start = count;
-  while(buffer[start] != '$')  // find the start of the GPS data -> multiple $GPGGA can appear in 1 line, if so, need to take the last one
+  
+  // find the start of the GPS data
+  // if multiple $GPGGA appear in 1 line, take the last one
+  while(buffer[start] != '$')
   {
     if(start == 0)  // it's unsigned char, so we can't check on <= 0
       break;
     start--;
   }
-  start++;  // remove the '$', don't need to compare with that
+  start++;  // skip the '$', don't need to compare with that
 
   // we found the correct line, so extract the values
   if(start + 4 < 64 && buffer[start] == 'G' && buffer[start+1] == 'P' && buffer[start+2] == 'G' && buffer[start+3] == 'G' && buffer[start+4] == 'A')
   {
     start += 6;
-    timestamp = ExtractValue(start);
-    latitude = ConvertDegrees(ExtractValue(start) / 100);
-    start = Skip(start);    
-    longitude = ConvertDegrees(ExtractValue(start)  / 100);
-    start = Skip(start);
-    start = Skip(start);
-    start = Skip(start);
-    start = Skip(start);
-    altitude = ExtractValue(start);
+    timestamp = extractValue(start);
+    latitude = convertDegrees(extractValue(start) / 100);
+    start = skip(start);    
+    longitude = convertDegrees(extractValue(start)  / 100);
+    start = skip(start);
+    start = skip(start);
+    start = skip(start);
+    start = skip(start);
+    altitude = extractValue(start);
     return true;
   }
   else
     return false;
 }
 
-float ConvertDegrees(float input)
+float convertDegrees(float input)
 {
   float fractional = input - (int)input;
   return (int)input + (fractional / 60.0) * 100.0;
 }
 
-
 // extracts a single value out of the stream received from the device and returns this value
-float ExtractValue(unsigned char& start)
+float extractValue(unsigned char& start)
 {
   unsigned char end = start + 1;
-  while(end < count && buffer[end] != ',')  // find the start of the GPS data -> multiple $GPGGA can appear in 1 line, if so, need to take the last one
+  
+  // find the start of the GPS data
+  // if multiple $GPGGA appear in 1 line, take the last one
+  while(end < count && buffer[end] != ',')
     end++;
-  buffer[end] = 0;  // end the string, so we can create a string object from the sub string -> easy to convert to float
+
+  // end the string so we can create a string object from the sub string
+  // easy to convert to float
+  buffer[end] = 0;
   float result = 0.0;
+
   if(end != start + 1)  // if we only found a ',' then there is no value
     result = String((const char*)(buffer + start)).toFloat();
+
   start = end + 1;
   return result;
 }
 
-// skips a position in the text stream that was received from the gps
-unsigned char Skip(unsigned char start)
+// skip a position in the text stream that was received from the gps
+unsigned char skip(unsigned char start)
 {
   unsigned char end = start + 1;
-  while(end < count && buffer[end] != ',')  // find the start of the GPS data -> multiple $GPGGA can appear in 1 line, if so, need to take the last one
+  
+  // find the start of the GPS data
+  // if multiple $GPGGA appear in 1 line, take the last one
+  while(end < count && buffer[end] != ',')
     end++;
+
   return end+1;
 }
 
+// reset the entire buffer back to 0
 void clearBufferArray()
 {
-  for (int i=0; i<count;i++) buffer[i]=NULL;  // reset the entire buffer back to 0
+  for (int i=0; i<count;i++)
+  {
+    buffer[i]=NULL;
+  }
   count = 0;
 }
