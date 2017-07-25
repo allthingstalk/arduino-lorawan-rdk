@@ -95,7 +95,6 @@ void setup()
   while((!loraSerial) && (millis()) < 10000){}   // wait until the serial bus is available
 
   while(!device.initABP(DEV_ADDR, APPSKEY, NWKSKEY))
-  debugSerial.println("retrying...");
   debugSerial.println("Ready to send data");
   
   debugSerial.println();
@@ -146,10 +145,8 @@ void readSensors()
     airValue = airqualitysensor.getRawData();
 }
 
-// wait 10 seconds before sending the next datapoint
 void process()
 {
-  device.processQueue();
   while(device.processQueue() > 0)
   {
     debugSerial.print("QueueCount: ");

@@ -48,7 +48,6 @@ void setup()
   while((!loraSerial) && (millis()) < 10000){}   // wait until the serial bus is available
 
   while(!device.initABP(DEV_ADDR, APPSKEY, NWKSKEY))
-  debugSerial.println("retrying...");
   debugSerial.println("Ready to send data");
 
   // send initial value
@@ -60,8 +59,6 @@ void sendValue(bool val)
   payload.reset();
   payload.addBoolean(val);
   payload.addToQueue(false);  // without ACK
-  
-  device.processQueue();
   
   while(device.processQueue() > 0)
   {

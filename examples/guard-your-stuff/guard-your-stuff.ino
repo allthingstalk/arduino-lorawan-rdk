@@ -96,7 +96,6 @@ void setup()
   while((!loraSerial) && (millis()) < 10000){}   // wait until the serial bus is available
 
   while(!device.initABP(DEV_ADDR, APPSKEY, NWKSKEY))
-  debugSerial.println("retrying...");  // initialize connection with the AllThingsTalk Developer Cloud
   debugSerial.println("Ready to send data");
 
   debugSerial.println();
@@ -122,8 +121,8 @@ void setup()
 
 void process()
 {
-  device.processQueue();
-  while(device.processQueue() > 0) {
+  while(device.processQueue() > 0)
+  {
     debugSerial.print("QueueCount: ");
     debugSerial.println(device.queueCount());
     delay(10000);
