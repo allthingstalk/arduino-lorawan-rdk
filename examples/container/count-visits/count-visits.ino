@@ -77,7 +77,7 @@ unsigned long lastSentAt = 0;  // the time when the last visitcount was sent to 
 void setup() 
 {
   pinMode(pushButton, INPUT);  // initialize the digital pin as an input
-  pinMode(doorSensor, INPUT);
+  pinMode(doorSensor, INPUT_PULLUP);  // automatically pull of the resistance
 
   debugSerial.begin(SERIAL_BAUD);
   while((!debugSerial) && (millis()) < 10000){}  // wait until the serial bus is available

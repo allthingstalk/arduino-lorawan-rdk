@@ -22,8 +22,12 @@ Download the source code and copy the content of the zip file to your arduino li
 
 ## Example sketches
 
-* `push-button-containers` basic push button example using preset [container definitions](http://docs.allthingstalk.com/developers/data/default-payload-conversion/)
-* `push-button-payload-builder` basic push button example using our [custom binary payload decoding](http://docs.allthingstalk.com/developers/data/custom-payload-conversion/)
+* `pushbutton` basic pushbutton example
 * `guard-your-stuff` lock your object and track its movement when it gets stolen
 * `count-visits` count visits for facility maintanence
 * `environmental-sensing` measure your environment
+
+Each of these examples come in two flavours
+
+* Examples using preset [container definitions](http://docs.allthingstalk.com/developers/data/default-payload-conversion/) are found in the _container_ folder
+* Examples using our [custom binary payload decoding](http://docs.allthingstalk.com/developers/data/custom-payload-conversion/) are found in the _binary-payload_ folder
