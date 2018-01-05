@@ -13,12 +13,12 @@
         "case": 1,
         "comment" : "Environmental sensing example",
         "do": [
-          {"comment": "LOUDNESS", "asset": "12", "value": {"byte" : 2, "byteorder": "little", "bytelength": 4, "type": "number"}},
-          {"comment": "LIGHT", "asset": "6", "value": {"byte" : 6, "byteorder": "little", "bytelength": 4, "type": "number"}},
-          {"comment": "TEMPERATURE", "asset": "5", "value": {"byte" : 10, "byteorder": "little", "bytelength": 4, "type": "number"}},
-          {"comment": "HUMIDITY", "asset": "11", "value": {"byte" : 14, "byteorder": "little", "bytelength": 4, "type": "number"}},
-          {"comment": "PRESSURE", "asset": "10", "value": {"byte" : 18, "byteorder": "little", "bytelength": 4, "type": "number"}},
-          {"comment": "AIR_QUALITY", "asset": "13", "value": {"byte" : 22, "byteorder": "little", "bytelength": 2, "type": "integer"}}
+          {"comment": "LOUDNESS", "asset": "12", "value": {"byte" : 2, "byteorder": "big", "bytelength": 4, "type": "number"}},
+          {"comment": "LIGHT", "asset": "6", "value": {"byte" : 6, "byteorder": "big", "bytelength": 4, "type": "number"}},
+          {"comment": "TEMPERATURE", "asset": "5", "value": {"byte" : 10, "byteorder": "big", "bytelength": 4, "type": "number"}},
+          {"comment": "HUMIDITY", "asset": "11", "value": {"byte" : 14, "byteorder": "big", "bytelength": 4, "type": "number"}},
+          {"comment": "PRESSURE", "asset": "10", "value": {"byte" : 18, "byteorder": "big", "bytelength": 4, "type": "number"}},
+          {"comment": "AIR_QUALITY", "asset": "13", "value": {"byte" : 22, "byteorder": "big", "bytelength": 2, "type": "integer"}}
         ]
       },
       {

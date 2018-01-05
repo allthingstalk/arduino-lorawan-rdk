@@ -102,7 +102,7 @@ void setup()
 void sendVisitCount(int16_t val)
 {
   payload.reset();
-  payload.addInteger(1);  // identifier for this example
+  payload.addInteger(0);  // identifier for this example
   payload.addInteger(val);
   payload.addToQueue(false);
   
@@ -114,6 +114,7 @@ void sendVisitCount(int16_t val)
   }
 
   lastSentAt = millis();
+  prevVisitCountSent = val;
 }
 
 void loop() 

@@ -111,6 +111,7 @@ void sendVisitCount(int16_t val)
   }
 
   lastSentAt = millis();
+  prevVisitCountSent = val;
 }
 
 void loop() 
