@@ -46,15 +46,22 @@
  * 5 minutes, all values will be read and sent to the AllthingsTalk Devloper
  * Cloud. 
  */
+ 
+// Select your preferred method of sending data
+//#define CONTAINERS
+#define CBOR
+//#define BINARY
+
+/***************************************************************************/
 
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 #include "AirQuality2.h"
-#include <ATT_IOT_LoRaWAN.h>
+#include <ATT_LoRaWAN.h>
 #include "keys.h"
 #include <MicrochipLoRaModem.h>
-#include <Container.h>
+#include <PayloadBuilder.h>
 
 #define SERIAL_BAUD 57600
 
@@ -70,7 +77,20 @@
 MicrochipLoRaModem modem(&loraSerial, &debugSerial);
 ATTDevice device(&modem, &debugSerial, false, 7000);  // minimum time between 2 messages set at 7000 milliseconds
 
-Container container(device);
+#ifdef CONTAINERS
+  #include <Container.h>
+  Container container(device);
+#endif
+
+#ifdef CBOR
+  #include <CborBuilder.h>
+  CborBuilder payload(device);
+#endif
+
+#ifdef BINARY
+  #include <PayloadBuilder.h>
+  PayloadBuilder payload(device);
+#endif
 
 AirQuality2 airqualitysensor;
 Adafruit_BME280 tph; // I2C
@@ -157,33 +177,41 @@ void process()
 
 void sendSensorValues()
 {
+  #ifdef CONTAINERS
   debugSerial.println("Start sending data to the ATT cloud platform");
   debugSerial.println("--------------------------------------------");
-    
-  debugSerial.println("Sending sound value... ");
-  container.addToQueue(soundValue, LOUDNESS_SENSOR, false);
-  process();
+  container.addToQueue(soundValue, LOUDNESS_SENSOR, false); process();
+  container.addToQueue(lightValue, LIGHT_SENSOR, false); process();
+  container.addToQueue(temp, TEMPERATURE_SENSOR, false); process();
+  container.addToQueue(hum, HUMIDITY_SENSOR, false); process();
+  container.addToQueue(pres, PRESSURE_SENSOR, false); process();
+  container.addToQueue(airValue, AIR_QUALITY_SENSOR, false); process();
+  #endif
 
-  debugSerial.println("Sending light value... ");
-  container.addToQueue(lightValue, LIGHT_SENSOR, false);
+  #ifdef CBOR
+  payload.reset();
+  payload.map(6);
+  payload.addNumber(soundValue);
+  payload.addNumber(lightValue);
+  payload.addNumber(temp);
+  payload.addNumber(hum);
+  payload.addNumber(pres);
+  payload.addInteger(airValue);
+  payload.addToQueue(false);
   process();
+  #endif
 
-  debugSerial.println("Sending temperature value... ");
-  container.addToQueue(temp, TEMPERATURE_SENSOR, false);
+  #ifdef BINARY
+  payload.reset();
+  payload.addNumber(soundValue);
+  payload.addNumber(lightValue);
+  payload.addNumber(temp);
+  payload.addNumber(hum);
+  payload.addNumber(pres);
+  payload.addInteger(airValue);
+  payload.addToQueue(false);
   process();
-
-  debugSerial.println("Sending humidity value... ");  
-  container.addToQueue(hum, HUMIDITY_SENSOR, false);
-  process();
-
-  debugSerial.println("Sending pressure value... ");  
-  container.addToQueue(pres, PRESSURE_SENSOR, false);
-  process();
-
-  debugSerial.println("Sending air quality value... ");  
-  container.addToQueue(airValue, AIR_QUALITY_SENSOR, false);
-  process();
-
+  #endif
 }
 
 void displaySensorValues()

@@ -1,0 +1,13 @@
+{
+  "comment": "Guard your stuff experiment",
+  "sense": [
+    {"comment": "BINARY", "asset": "1", "value": { "byte": 0 }},
+    {"comment": "GPS", "asset": "9", "value":
+      {
+        "latitude": {"byte": 1, "byteorder": "little", "bytelength": 4, "type": "number"},
+        "longitude": {"byte": 5, "byteorder": "little", "bytelength": 4, "type": "number"},
+        "altitude": {"byte": 9, "byteorder": "little", "bytelength": 4, "type": "number"}
+      }
+    }
+  ]
+}

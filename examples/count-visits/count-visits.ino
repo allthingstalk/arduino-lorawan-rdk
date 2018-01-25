@@ -45,12 +45,19 @@
  * done. This can also be seen as validation that the cleaning crew has
  * actually visited the facility.
  */
+ 
+// Select your preferred method of sending data
+//#define CONTAINERS
+#define CBOR
+//#define BINARY
+
+/***************************************************************************/
 
 #include <Wire.h>
-#include <ATT_IOT_LoRaWAN.h>
+#include <ATT_LoRaWAN.h>
 #include "keys.h"
 #include <MicrochipLoRaModem.h>
-#include <Container.h>
+#include <PayloadBuilder.h>
 
 #define SERIAL_BAUD 57600
 
@@ -63,7 +70,20 @@ int doorSensor = 4;
 MicrochipLoRaModem modem(&loraSerial, &debugSerial);
 ATTDevice device(&modem, &debugSerial, false, 7000);  // minimum time between 2 consecutive messages set to 7000 milliseconds
 
-Container container(device);
+#ifdef CONTAINERS
+  #include <Container.h>
+  Container container(device);
+#endif
+
+#ifdef CBOR
+  #include <CborBuilder.h>
+  CborBuilder payload(device);
+#endif
+
+#ifdef BINARY
+  #include <PayloadBuilder.h>
+  PayloadBuilder payload(device);
+#endif
 
 #define SEND_MAX_EVERY 30000 // the (mimimum) time between 2 consecutive updates of visit counts
 
@@ -77,7 +97,7 @@ unsigned long lastSentAt = 0;  // the time when the last visitcount was sent to 
 void setup() 
 {
   pinMode(pushButton, INPUT);  // initialize the digital pin as an input
-  pinMode(doorSensor, INPUT_PULLUP);  // automatically pull of the resistance
+  pinMode(doorSensor, INPUT);
 
   debugSerial.begin(SERIAL_BAUD);
   while((!debugSerial) && (millis()) < 10000){}  // wait until the serial bus is available
@@ -99,16 +119,37 @@ void setup()
   prevDoorSensor = digitalRead(doorSensor);   // read the initial state
 }
 
-void sendVisitCount(int16_t val)
+void process()
 {
-  container.addToQueue(val, INTEGER_SENSOR, false);  // without ACK
-  
   while(device.processQueue() > 0)
   {
     debugSerial.print("QueueCount: ");
     debugSerial.println(device.queueCount());
     delay(10000);
   }
+}
+
+void sendVisitCount(int16_t val)
+{
+  #ifdef CONTAINERS
+  container.addToQueue(val, INTEGER_SENSOR, false);
+  process();
+  #endif
+  
+  #ifdef CBOR
+  payload.reset();
+  payload.map(1);
+  payload.addInteger(val, "15");
+  payload.addToQueue(false);
+  process();
+  #endif
+
+  #ifdef BINARY  
+  payload.reset();
+  payload.addInteger(val);
+  payload.addToQueue(false);
+  process();
+  #endif
 
   lastSentAt = millis();
   prevVisitCountSent = val;
