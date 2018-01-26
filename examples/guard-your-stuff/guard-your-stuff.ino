@@ -4,7 +4,7 @@
  * /_/ \_\_|_| |_| |_||_|_|_||_\__, /__/ |_|\__,_|_|_\_\ |___/___/|_|\_\
  *                             |___/
  *
- * Copyright 2017 AllThingsTalk
+ * Copyright 2018 AllThingsTalk
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,28 +20,11 @@
  */ 
 
 /*
- *  AllThingsTalk Maker Cloud IoT experiment for LoRa
- *  Version 1.0 dd 09/11/2015
- *  Original author: Jan Bogaerts 2015
- *
- *  This sketch is part of the AllThingsTalk LoRa rapid development kit
- *  -> http://www.allthingstalk.com/lora-rapid-development-kit
- *
- *  This example sketch is based on the Proxilmus IoT network in Belgium
- *  The sketch and libs included support the
- *  - MicroChip RN2483 LoRa module
- *  - Embit LoRa modem EMB-LR1272
- *  
- *  For more information, please check our documentation
- *  -> http://allthingstalk.com/docs/tutorials/lora/setup
- *
- * Explanation:
- *
- * If the accelerometer senses movement, the device will send out GPS
- * coordinates. If we have our lock turned on, movement will trigger a
- * notification which will be visible in the AllthingsTalk Developer
- * Cloud and on our Smartphone. If the lock is turned off, nothing will
- * happen, regardless of any movement of the device.
+ * Do you want to get notified when someone is moving things precious to
+ * you? This experiment shows how a LoRa device can be used to detect
+ * unexpected movement of an object and send out notifications to its
+ * owner. Furthermore, it shows how you can track the object using its
+ * GEO location.
  */
  
 // Select your preferred method of sending data
@@ -51,13 +34,14 @@
 
 /***************************************************************************/
 
+
+
 #include <Wire.h>
 #include <MMA7660.h>
 #include <ATT_LoRaWAN.h>
 #include <ATT_GPS.h>
 #include "keys.h"
 #include <MicrochipLoRaModem.h>
-#include <PayloadBuilder.h>
 
 #define Serial_BAUD 57600
 
@@ -205,8 +189,8 @@ void sendCoordinates(boolean val)
   #ifdef CBOR  // Send data using Cbor
   payload.reset();
   payload.map(2);
-  payload.addBoolean(val, "motion");
-  payload.addGPS(gps.latitude, gps.longitude, gps.altitude, "gps");
+  payload.addBoolean(val, "1");
+  payload.addGPS(gps.latitude, gps.longitude, gps.altitude, "9");
   payload.addToQueue(false);
   process();
   #endif

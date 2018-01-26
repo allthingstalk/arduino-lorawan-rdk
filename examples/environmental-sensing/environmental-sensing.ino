@@ -4,7 +4,7 @@
  * /_/ \_\_|_| |_| |_||_|_|_||_\__, /__/ |_|\__,_|_|_\_\ |___/___/|_|\_\
  *                             |___/
  *
- * Copyright 2017 AllThingsTalk
+ * Copyright 2018 AllThingsTalk
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,31 +20,10 @@
  */
 
 /*
- *  AllThingsTalk Maker IoT experiment for LoRa
- *  Version 1.0 dd 09/11/2015
- *  Original author: Jan Bogaerts 2015
- *
- *  This sketch is part of the AllThingsTalk LoRa rapid development kit
- *  -> http://www.allthingstalk.com/lora-rapid-development-kit
- *
- *  This example sketch is based on the Proxilmus IoT network in Belgium
- *  The sketch and libs included support the
- *  - MicroChip RN2483 LoRa module
- *  - Embit LoRa modem EMB-LR1272
- *  
- *  External libraries used
- *  - Adafruit_BME280
- *  - Adafruit_Sensor
- *  - AirQuality2
- *  
- *  For more information, please check our documentation
- *  -> http://allthingstalk.com/docs/tutorials/lora/setup
- *
- * Explanation:
- * 
- * We will measure our environment using 6 sensors. Approximately, every
- * 5 minutes, all values will be read and sent to the AllthingsTalk Devloper
- * Cloud. 
+ * This experiment shows how LoRa can be used to monitor the quality of
+ * your surrounding environment. Measure in- and outdoor air quality, noise
+ * levels and temperature to provide stakeholders a dashboard to support
+ * their decision making to improve quality of living.
  */
  
 // Select your preferred method of sending data
@@ -54,6 +33,8 @@
 
 /***************************************************************************/
 
+
+
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
@@ -61,7 +42,6 @@
 #include <ATT_LoRaWAN.h>
 #include "keys.h"
 #include <MicrochipLoRaModem.h>
-#include <PayloadBuilder.h>
 
 #define SERIAL_BAUD 57600
 
@@ -191,12 +171,12 @@ void sendSensorValues()
   #ifdef CBOR
   payload.reset();
   payload.map(6);
-  payload.addNumber(soundValue);
-  payload.addNumber(lightValue);
-  payload.addNumber(temp);
-  payload.addNumber(hum);
-  payload.addNumber(pres);
-  payload.addInteger(airValue);
+  payload.addNumber(soundValue, "12");
+  payload.addNumber(lightValue, "6");
+  payload.addNumber(temp, "5");
+  payload.addNumber(hum, "11");
+  payload.addNumber(pres, "10");
+  payload.addInteger(airValue, "13");
   payload.addToQueue(false);
   process();
   #endif

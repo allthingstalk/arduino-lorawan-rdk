@@ -4,7 +4,7 @@
  * /_/ \_\_|_| |_| |_||_|_|_||_\__, /__/ |_|\__,_|_|_\_\ |___/___/|_|\_\
  *                             |___/
  *
- * Copyright 2017 AllThingsTalk
+ * Copyright 2018 AllThingsTalk
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,30 +20,10 @@
  */
 
 /*
- *  AllThingsTalk Maker IoT experiment for LoRa
- *  Version 2.0 dd 29/06/2017
- *  Original author: Jan Bogaerts 2015
- *
- *  This sketch is part of the AllThingsTalk LoRa rapid development kit
- *  -> http://www.allthingstalk.com/lora-rapid-development-kit
- *
- *  This example sketch is based on the Proxilmus IoT network in Belgium
- *  The sketch and libs included support the
- *  - MicroChip RN2483 LoRa module
- *  - Embit LoRa modem EMB-LR1272
- *  
- *  For more information, please check our documentation
- *  -> http://allthingstalk.com/docs/tutorials/lora/setup
- *
- * Explanation:
- * 
- * Each time the door opens a counter is incremented locally on your LoRa
- * device. Every 30 seconds, if the count has changed, it will be sent to
- * your AllthingsTalk account. As soon as a count of 20 is reached, a
- * notification is sent out to remind you that cleaning is in order. A
- * pushbutton on the device allows you to reset the count when cleaning is
- * done. This can also be seen as validation that the cleaning crew has
- * actually visited the facility.
+ * Improve facility management by taking into account actual usage based
+ * on real time measurements. This experiment shows how a LoRa sensor can
+ * count visits to optimise cleaning based on usage rather than rigid fixed
+ * schedules.
  */
  
 // Select your preferred method of sending data
@@ -53,11 +33,12 @@
 
 /***************************************************************************/
 
+
+
 #include <Wire.h>
 #include <ATT_LoRaWAN.h>
 #include "keys.h"
 #include <MicrochipLoRaModem.h>
-#include <PayloadBuilder.h>
 
 #define SERIAL_BAUD 57600
 
@@ -139,7 +120,7 @@ void sendVisitCount(int16_t val)
   #ifdef CBOR
   payload.reset();
   payload.map(1);
-  payload.addInteger(val, "15");
+  payload.addInteger(val, "4");
   payload.addToQueue(false);
   process();
   #endif

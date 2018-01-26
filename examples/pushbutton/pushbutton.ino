@@ -18,11 +18,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ 
+/*
+ * This basic example gives you a good overview of an example sketch. It
+ * has a simple push button that acts as a toggle and sends the state true
+ * or false to the AllThingsTalk cloud.
+ */
 
-#include <ATT_IOT_LoRaWAN.h>
+// Select your preferred method of sending data
+//#define CONTAINERS
+#define CBOR
+//#define BINARY
+
+/***************************************************************************/
+
+
+
+#include <ATT_LoRaWAN.h>
 #include "keys.h"
 #include <MicrochipLoRaModem.h>
-#include <PayloadBuilder.h>
 
 #define SERIAL_BAUD 57600
 
@@ -32,7 +46,20 @@
 MicrochipLoRaModem modem(&loraSerial, &debugSerial);
 ATTDevice device(&modem, &debugSerial, false, 7000);  // minimum time between 2 messages set at 7000 milliseconds
 
-PayloadBuilder payload(device);
+#ifdef CONTAINERS
+  #include <Container.h>
+  Container container(device);
+#endif
+
+#ifdef CBOR
+  #include <CborBuilder.h>
+  CborBuilder payload(device);
+#endif
+
+#ifdef BINARY
+  #include <PayloadBuilder.h>
+  PayloadBuilder payload(device);
+#endif
 
 int digitalSensor = 20;  // digital sensor is connected to pin D20/21
 
@@ -54,18 +81,37 @@ void setup()
   sendValue(false);
 }
 
-void sendValue(bool val)
+void process()
 {
-  payload.reset();
-  payload.addBoolean(val);
-  payload.addToQueue(false);  // without ACK
-  
   while(device.processQueue() > 0)
   {
     debugSerial.print("QueueCount: ");
     debugSerial.println(device.queueCount());
     delay(10000);
   }
+}
+
+void sendValue(bool val)
+{
+  #ifdef COPNTAINERS
+  container.addToQueue(val, BINARY_SENSOR, false);
+  process();
+  #endif
+  
+  #ifdef CBOR
+  payload.reset();
+  payload.map(1);
+  payload.addBoolean(val, "1");
+  payload.addToQueue(false);
+  process();
+  #endif
+  
+  #ifdef BINARY
+  payload.reset();
+  payload.addBoolean(val);
+  payload.addToQueue(false);
+  process();
+  #endif
 }
 
 bool sensorVal = false;
