@@ -27,7 +27,21 @@ Download the source code and copy the content of the zip file to your arduino li
 * `count-visits` count visits for facility maintanence
 * `environmental-sensing` measure your environment
 
-Each of these examples come in two flavours
+### Sending data
 
-* Examples using preset [container definitions](http://docs.allthingstalk.com/developers/data/default-payload-conversion/) are found in the _container_ folder
-* Examples using our [custom binary payload decoding](http://docs.allthingstalk.com/developers/data/custom-payload-conversion/) are found in the _binary-payload_ folder
+There are three ways to send your data to AllThingsTalk
+
+* `Standardized containers`
+* `Cbor payload`
+* `Binary payload`
+
+You can simply select the method you prefer by (un)commenting the methods at the start of the sketch.
+
+```
+// Select your preferred method of sending data
+//#define CONTAINERS
+#define CBOR
+//#define BINARY
+```
+
+By default, Cbor will be used. For more information on payloads, please [check here](https://github.com/allthingstalk/arduino-lorawan-sdk/blob/master/README.md)

@@ -4,7 +4,7 @@
  * /_/ \_\_|_| |_| |_||_|_|_||_\__, /__/ |_|\__,_|_|_\_\ |___/___/|_|\_\
  *                             |___/
  *
- * Copyright 2017 AllThingsTalk
+ * Copyright 2018 AllThingsTalk
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@
 #define loraSerial Serial1
 
 MicrochipLoRaModem modem(&loraSerial, &debugSerial);
-ATTDevice device(&modem, &debugSerial, false, 7000);  // minimum time between 2 messages set at 7000 milliseconds
+ATTDevice device(&modem, &debugSerial, false, 7000);  // Minimum time between 2 messages set at 7000 milliseconds
 
 #ifdef CONTAINERS
   #include <Container.h>
@@ -61,18 +61,18 @@ ATTDevice device(&modem, &debugSerial, false, 7000);  // minimum time between 2 
   PayloadBuilder payload(device);
 #endif
 
-int digitalSensor = 20;  // digital sensor is connected to pin D20/21
+int digitalSensor = 20;  // Digital sensor is connected to pin D20/21
 
 void setup() 
 {  
-  pinMode(digitalSensor, INPUT);  // initialize the digital pin as an input
+  pinMode(digitalSensor, INPUT);  // Initialize the digital pin as an input
   delay(3000);
   
   debugSerial.begin(SERIAL_BAUD);
-  while((!debugSerial) && (millis()) < 10000){}  // wait until the serial bus is available
+  while((!debugSerial) && (millis()) < 10000){}  // Wait until the serial bus is available
   
-  loraSerial.begin(modem.getDefaultBaudRate());  // set baud rate of the serial connection to match the modem
-  while((!loraSerial) && (millis()) < 10000){}   // wait until the serial bus is available
+  loraSerial.begin(modem.getDefaultBaudRate());  // Set baud rate of the serial connection to match the modem
+  while((!loraSerial) && (millis()) < 10000){}   // Wait until the serial bus is available
 
   while(!device.initABP(DEV_ADDR, APPSKEY, NWKSKEY))
   debugSerial.println("Ready to send data");
@@ -119,8 +119,8 @@ bool prevButtonState = false;
 
 void loop() 
 {
-  bool sensorRead = digitalRead(digitalSensor);     // read status Digital Sensor
-  if (sensorRead == 1 && prevButtonState == false)  // verify if value has changed
+  bool sensorRead = digitalRead(digitalSensor);     // Read status Digital Sensor
+  if (sensorRead == 1 && prevButtonState == false)  // Verify if value has changed
   {
     prevButtonState = true;
     debugSerial.println("Button pressed");
