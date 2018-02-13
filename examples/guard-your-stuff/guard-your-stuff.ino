@@ -198,7 +198,7 @@ void sendCoordinates(boolean val)
   #ifdef BINARY  // Send data using a Binary payload and our ABCL language
   payload.reset();
   payload.addBoolean(val);
-  payload.addGps(gps.latitude, gps.longitude, gps.altitude);
+  payload.addGPS(gps.latitude, gps.longitude, gps.altitude);
   payload.addToQueue(false);
   process();
   #endif
