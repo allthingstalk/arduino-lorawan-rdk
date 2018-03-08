@@ -93,7 +93,7 @@ void process()
 
 void sendValue(bool val)
 {
-  #ifdef COPNTAINERS
+  #ifdef CONTAINERS
   container.addToQueue(val, BINARY_SENSOR, false);
   process();
   #endif
