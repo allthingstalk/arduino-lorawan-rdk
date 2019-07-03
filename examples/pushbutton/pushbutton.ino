@@ -46,6 +46,8 @@
 MicrochipLoRaModem modem(&loraSerial, &debugSerial);
 ATTDevice device(&modem, &debugSerial, false, 7000);  // Minimum time between 2 messages set at 7000 milliseconds
 
+void sendValue(bool val);
+
 #ifdef CONTAINERS
   #include <Container.h>
   Container container(device);
